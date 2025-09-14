@@ -1,12 +1,13 @@
 name: 'DCX Sample Action'
 description: 'A sample GitHub action to test custom actions'
+
 runs:
   using: 'composite'
   steps:
     - name: Make script executable
       shell: bash
-      run: chmod +x ./dcx.sh
+      run: chmod +x ${{ github.action_path }}/dcx.sh
 
-    - name: Run the script
+    - name: Run DCX Script
       shell: bash
-      run: ./dcx.sh
+      run: ${{ github.action_path }}/dcx.sh
