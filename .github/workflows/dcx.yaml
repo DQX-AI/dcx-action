@@ -11,4 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run custom DCX action
-        uses: your-username/dcx-public-action@main
+        uses: Crisiswastaken/dcx-public-action@main
