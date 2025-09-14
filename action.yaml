@@ -1,0 +1,7 @@
+name: 'DCX Sample Action'
+description: 'A sample GitHub action to test custom actions'
+runs:
+  using: 'composite'
+  steps:
+    - run: chmod +x ./dcx.sh
+    - run: ./dcx.sh
