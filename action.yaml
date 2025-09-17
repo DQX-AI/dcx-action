@@ -2,24 +2,9 @@ name: "DCX Action"
 description: "Install dcx-cli from GitHub Release and run DCX"
 
 inputs:
-  dcx_url:
-    description: "Direct URL to wheel/sdist on GitHub Releases"
-    required: false
-  dcx_owner:
-    description: "Owner of dcx release repo (if dcx_url unset)"
-    default: "arkverse-in"
-    required: false
-  dcx_repo:
-    description: "Repo of dcx release (if dcx_url unset)"
-    default: "dcx-cli"
-    required: false
   dcx_tag:
     description: 'Release tag or "latest"'
     default: "latest"
-    required: false
-  dcx_asset_pattern:
-    description: "Regex to select asset"
-    default: 'dcx(-|_)\\d+\\.\\d+\\.\\d+.*\\.(whl|tar\\.gz)'
     required: false
 
   repo_path:
