@@ -1,13 +1,67 @@
-name: 'DCX Sample Action'
-description: 'A sample GitHub action to test custom actions'
+name: "DCX Action"
+description: "Install dcx-cli from GitHub Release and run DCX"
+
+inputs:
+  dcx_url:
+    description: "Direct URL to wheel/sdist on GitHub Releases"
+    required: false
+  dcx_owner:
+    description: "Owner of dcx release repo (if dcx_url unset)"
+    default: "arkverse-in"
+    required: false
+  dcx_repo:
+    description: "Repo of dcx release (if dcx_url unset)"
+    default: "dcx-cli"
+    required: false
+  dcx_tag:
+    description: 'Release tag or "latest"'
+    default: "latest"
+    required: false
+  dcx_asset_pattern:
+    description: "Regex to select asset"
+    default: 'dcx(-|_)\\d+\\.\\d+\\.\\d+.*\\.(whl|tar\\.gz)'
+    required: false
+
+  repo_path:
+    description: "Target repo path to scan"
+    default: "${{ github.workspace }}"
+    required: false
+  scanner_dir:
+    description: "Folder with Makefile targets (optional)"
+    default: "."
+    required: false
+  max_checks:
+    description: "Poll count"
+    default: "30"
+    required: false
+  delay:
+    description: "Poll delay seconds"
+    default: "1.0"
+    required: false
+
+  ai_endpoint:
+    description: "Optional AI endpoint"
+    required: false
+  ai_api_key:
+    description: "Optional AI key"
+    required: false
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
-    - name: Make script executable
+    - name: Run DCX Python bootstrap
       shell: bash
-      run: chmod +x ${{ github.action_path }}/dcx.sh
-
-    - name: Run DCX Script
-      shell: bash
-      run: ${{ github.action_path }}/dcx.sh
+      env:
+        DCX_URL: ${{ inputs.dcx_url }}
+        DCX_OWNER: ${{ inputs.dcx_owner }}
+        DCX_REPO: ${{ inputs.dcx_repo }}
+        DCX_TAG: ${{ inputs.dcx_tag }}
+        DCX_ASSET_PATTERN: ${{ inputs.dcx_asset_pattern }}
+        REPO_PATH: ${{ inputs.repo_path }}
+        SCANNER_DIR: ${{ inputs.scanner_dir }}
+        MAX_CHECKS: ${{ inputs.max_checks }}
+        DELAY: ${{ inputs.delay }}
+        AI_ENDPOINT: ${{ inputs.ai_endpoint }}
+        AI_API_KEY: ${{ inputs.ai_api_key }}
+        GITHUB_TOKEN: ${{ github.token }}
+      run: python3 "${{ github.action_path }}/dcx.py"
