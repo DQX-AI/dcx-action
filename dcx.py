@@ -98,8 +98,8 @@ def run_cli(repo_path, max_checks, delay):
 def main():
     # Inputs
     dcx_url = env("DCX_URL")
-    owner = env("DCX_OWNER", "arkverse-in")
-    repo = env("DCX_REPO", "dcx-cli")
+    owner = env("DCX_OWNER", "DQX-AI")
+    repo = env("DCX_REPO", "dcx-classification-agent")
     tag = env("DCX_TAG", "latest")
     pattern = env("DCX_ASSET_PATTERN", r"dcx(-|_)\d+\.\d+\.\d+.*\.(whl|tar\.gz)")
     repo_path = env("REPO_PATH", os.getcwd())
