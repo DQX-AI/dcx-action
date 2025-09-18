@@ -209,10 +209,13 @@ def uv_tool_install_from_url(url: str, token: str) -> None:
 
 
 def _dcx_cmd() -> str:
+    # Prefer running via uvx if available
+    if shutil.which("uvx"):
+        return "uvx dcx"
     dcx = shutil.which("dcx")
     if dcx:
         return f'"{dcx}"'
-    # Prefer uv-run if available, else python -m
+    # Fallbacks: uv run, then python -m
     if shutil.which("uv"):
         return "uv run -m dcx"
     py = shutil.which("python3") or sys.executable
@@ -255,21 +258,25 @@ def run_makeflow(
 
 def run_cli(repo_path: Path, max_checks: int, delay: float) -> None:
     cmd = _dcx_cmd()
-    # Scan
-    sh(f'{cmd} scan --repo "{repo_path}" --out "output"', check=True)
-    # Poll status up to max_checks
-    for _ in range(max_checks):
-        try:
-            sh(f'{cmd} status --out "output"', check=True)
-            break
-        except Exception:
-            time.sleep(delay)
-    # Combine (best-effort)
-    try:
-        sh(f'{cmd} combine --out "output"', check=True)
-    except Exception:
-        pass
-    log("complete")
+    # 1) Scan repository
+    sh(f'{cmd} scan "{repo_path}" --full-scan --ai-analysis --verbose', check=True)
+
+    # Determine latest scan id from output directory
+    scan_dir = _latest_scan_dir()
+    if not scan_dir:
+        raise RuntimeError("no scan directory under output/")
+    scan_id = scan_dir.name
+
+    # 2) Check AI results for this specific scan
+    sh(f'{cmd} check-ai-results-scan "{scan_id}"', check=True)
+
+    # 3) Combine analysis for this scan
+    sh(f'{cmd} combine-analysis "{scan_id}"', check=True)
+
+    # 4) Send results to API
+    sh(f'{cmd} send-to-api "{scan_id}"', check=True)
+
+    log(f"complete: output/{scan_id}")
 
 
 # ------------- main -------------
