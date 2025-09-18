@@ -96,7 +96,7 @@ def main():
     os.environ["AI_ENDPOINT"] = env("AI_ENDPOINT")
     os.environ["AI_API_KEY"] = env("AI_API_KEY")
     # Prefer dedicated service token if provided; fall back to GITHUB_TOKEN
-    token = env("DMC_SERVICE_TOKEN", env("GITHUB_TOKEN"))
+    token = env("DCX_SERVICE_TOKEN", env("GITHUB_TOKEN"))
 
     # Deps
     ensure_tool("uv", install_uv)
