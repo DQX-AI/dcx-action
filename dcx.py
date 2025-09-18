@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, shutil, subprocess, tempfile, time, urllib.request
+import os, shutil, subprocess, tempfile, time, urllib.request, json, re, urllib.parse
 
 def env(name, default=""):
     return os.environ.get(name, default)
@@ -13,10 +13,16 @@ def sh(cmd, check=True, capture=False):
         raise RuntimeError(f"cmd failed ({res.returncode}): {cmd}\n{out}")
     return res.stdout.decode().strip() if capture and res.stdout else ""
 
-def http_get(url, headers=None):
+def http_get_with_meta(url, headers=None):
     req = urllib.request.Request(url, headers=headers or {})
     with urllib.request.urlopen(req, timeout=60) as r:
-        return r.read()
+        content = r.read()
+        ctype = r.headers.get("Content-Type", "")
+        return content, ctype
+
+def http_get(url, headers=None):
+    content, _ = http_get_with_meta(url, headers=headers)
+    return content
 
 def ensure_tool(name, install_fn=None):
     if shutil.which(name):
@@ -38,18 +44,68 @@ def dcx_service_download_url(tag):
     # Example: http://3.101.151.224:8000/v1/dmc/github/releases/download?tag=latest
     return f"https://api.withdmc.com/v1/dmc/github/releases/download?tag={tag}"
 
+def _extract_download_url_from_json(payload: dict) -> str:
+    # Try common keys first
+    for key in ["download_url", "url", "asset_url", "browser_download_url"]:
+        val = payload.get(key)
+        if isinstance(val, str):
+            return val
+    # Search recursively for plausible asset URLs
+    candidate = None
+    rx = re.compile(r"https?://[^\s\"]+\.(whl|tar\.gz)(\?[^\s\"]*)?$")
+    def walk(obj):
+        nonlocal candidate
+        if candidate:
+            return
+        if isinstance(obj, dict):
+            for v in obj.values():
+                walk(v)
+        elif isinstance(obj, list):
+            for v in obj:
+                walk(v)
+        elif isinstance(obj, str):
+            if rx.search(obj):
+                candidate = obj
+    walk(payload)
+    return candidate or ""
+
 def uv_tool_install_from_url(url, token):
     # Always download the archive locally, then install from the file
     tmp = tempfile.mkdtemp(prefix="dcx_")
     try:
-        # Save to a filename with extension so installers detect format
-        fn = os.path.join(tmp, "package.tar.gz")
         headers = {}
         if token:
             # Backend expects header name "token: Bearer <token>"
             headers["token"] = f"Bearer {token}"
+
+        # First request – could be JSON metadata or the archive itself
+        body, ctype = http_get_with_meta(url, headers=headers)
+
+        # If JSON, extract the real download URL
+        if ctype.startswith("application/json") or (body[:1] == b"{" and body[-1:] == b"}"):
+            try:
+                meta = json.loads(body.decode("utf-8"))
+            except Exception:
+                meta = {}
+            real_url = _extract_download_url_from_json(meta)
+            if not real_url:
+                raise RuntimeError("Service returned JSON without a usable download URL")
+            # Follow-up download likely does not need the service token
+            body, ctype = http_get_with_meta(real_url, headers={})
+            # Derive a sensible filename from URL path
+            path = urllib.parse.urlparse(real_url).path
+            base = os.path.basename(path) or "package.tar.gz"
+        else:
+            # Direct archive response
+            base = "package.tar.gz"
+
+        # Ensure proper extension for uv/pip detection
+        if not (base.endswith(".whl") or base.endswith(".tar.gz")):
+            base = base + ".tar.gz"
+        fn = os.path.join(tmp, base)
+
         with open(fn, "wb") as f:
-            f.write(http_get(url, headers=headers))
+            f.write(body)
         sh(f'uv tool install "{fn}" --force', check=True)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -97,8 +153,6 @@ def main():
     os.environ["AI_API_KEY"] = env("AI_API_KEY")
     # Prefer dedicated service token if provided; fall back to GITHUB_TOKEN
     token = env("DCX_SERVICE_TOKEN", env("GITHUB_TOKEN"))
-
-    print(f"[dcx-action] token: {token}")
 
     # Deps
     ensure_tool("uv", install_uv)
