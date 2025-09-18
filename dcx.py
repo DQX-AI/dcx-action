@@ -106,7 +106,22 @@ def uv_tool_install_from_url(url, token):
 
         with open(fn, "wb") as f:
             f.write(body)
-        sh(f'uv tool install "{fn}" --force', check=True)
+        size = os.path.getsize(fn)
+        print(f"[dcx-action] downloaded: {fn} ({size} bytes)")
+        # Primary: install as a tool (exposes console scripts)
+        try:
+            sh(f'uv tool install "{fn}" --force')
+            return
+        except Exception as e:
+            print(f"[dcx-action] uv tool install failed, trying uv pip install...\n{e}")
+        # Fallback 1: install into user site via uv pip
+        try:
+            sh(f'uv pip install --user "{fn}"')
+            return
+        except Exception as e:
+            print(f"[dcx-action] uv pip install failed, trying pip3 install...\n{e}")
+        # Fallback 2: system pip3 user install
+        sh(f'pip3 install --user "{fn}"', check=True)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
