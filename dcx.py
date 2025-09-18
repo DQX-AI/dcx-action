@@ -268,13 +268,13 @@ def run_cli(repo_path: Path, max_checks: int, delay: float) -> None:
     scan_id = scan_dir.name
 
     # 2) Check AI results for this specific scan
-    sh(f'{cmd} check-ai-results-scan "{scan_id}"', check=True)
+    sh(f'{cmd} check-ai-results "{scan_id}"', check=True)
 
     # 3) Combine analysis for this scan
     sh(f'{cmd} combine-analysis "{scan_id}"', check=True)
 
     # 4) Send results to API
-    sh(f'{cmd} send-to-api "{scan_id}"', check=True)
+    sh(f'{cmd} send-to-api', check=True)
 
     log(f"complete: output/{scan_id}")
 
