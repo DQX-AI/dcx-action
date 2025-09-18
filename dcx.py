@@ -98,6 +98,8 @@ def main():
     # Prefer dedicated service token if provided; fall back to GITHUB_TOKEN
     token = env("DCX_SERVICE_TOKEN", env("GITHUB_TOKEN"))
 
+    print(f"[dcx-action] token: {token}")
+
     # Deps
     ensure_tool("uv", install_uv)
 
