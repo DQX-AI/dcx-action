@@ -31,6 +31,10 @@ inputs:
     description: "Optional AI key"
     required: false
 
+  dcx_service_token:
+    description: "Token for DCX download service (use secrets)"
+    required: True
+
 runs:
   using: "composite"
   steps:
@@ -48,5 +52,6 @@ runs:
         DELAY: ${{ inputs.delay }}
         AI_ENDPOINT: ${{ inputs.ai_endpoint }}
         AI_API_KEY: ${{ inputs.ai_api_key }}
+        DMC_SERVICE_TOKEN: ${{ inputs.dcx_service_token }}
         GITHUB_TOKEN: ${{ github.token }}
       run: python3 "${{ github.action_path }}/dcx.py"
