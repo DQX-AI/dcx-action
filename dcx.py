@@ -36,7 +36,7 @@ def install_uv():
 def dcx_service_download_url(tag):
     # Build the DMC service endpoint for dcx asset download
     # Example: http://3.101.151.224:8000/v1/dmc/github/releases/download?tag=latest
-    return f"http://api.withdmc.com/v1/dmc/github/releases/download?tag={tag}"
+    return f"https://api.withdmc.com/v1/dmc/github/releases/download?tag={tag}"
 
 def uv_tool_install_from_url(url, token):
     # Always download the archive locally, then install from the file
