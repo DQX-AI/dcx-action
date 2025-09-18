@@ -1,0 +1,24 @@
+name: DCX Action Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  dcx-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Client Code
+        uses: actions/checkout@v3
+
+      - name: Run DCX Action
+        uses: DQX-AI/dcx-action@main
+        with:
+          # Configure secret in the repo 
+          dcx_service_token: ${{ secrets.DCX_SERVICE_TOKEN }}
+          dcx_tag: latest
+          repo_path: ${{ github.workspace }}
+          scanner_dir: .
+          max_checks: "30"
+          delay: "1.0"
