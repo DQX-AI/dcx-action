@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json, os, re, shutil, subprocess, sys, tempfile, time, urllib.request
+import os, shutil, subprocess, tempfile, time, urllib.request
 
 def env(name, default=""):
     return os.environ.get(name, default)
@@ -33,33 +33,21 @@ def install_uv():
     uv_bin = os.path.expanduser("~/.uv/bin")
     os.environ["PATH"] = f"{uv_bin}:" + os.environ["PATH"]
 
-def gh_release_asset_url(owner, repo, tag, pattern, token):
-    api = f"https://api.github.com/repos/{owner}/{repo}/releases"
-    api = f"{api}/latest" if tag == "latest" else f"{api}/tags/{tag}"
-    headers = {"Accept": "application/vnd.github+json"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    data = json.loads(http_get(api, headers=headers))
-    urls = [a["browser_download_url"] for a in data.get("assets", [])]
-    rx = re.compile(pattern)
-    for u in urls:
-        if rx.search(u):
-            return u
-    raise RuntimeError(f"No asset matched pattern: {pattern}\nAvailable:\n" + "\n".join(urls))
+def dcx_service_download_url(tag):
+    # Build the DMC service endpoint for dcx asset download
+    # Example: http://3.101.151.224:8000/v1/dmc/github/releases/download?tag=latest
+    return f"http://api.withdmc.com/v1/dmc/github/releases/download?tag={tag}"
 
 def uv_tool_install_from_url(url, token):
-    # try direct install; fallback to download then install
-    try:
-        sh(f'uv tool install "{url}" --force', check=True)
-        return
-    except Exception:
-        pass
+    # Always download the archive locally, then install from the file
     tmp = tempfile.mkdtemp(prefix="dcx_")
     try:
-        fn = os.path.join(tmp, "pkg")
+        # Save to a filename with extension so installers detect format
+        fn = os.path.join(tmp, "package.tar.gz")
         headers = {}
-        if token and "github.com" in url:
-            headers["Authorization"] = f"Bearer {token}"
+        if token:
+            # Backend expects header name "token: Bearer <token>"
+            headers["token"] = f"Bearer {token}"
         with open(fn, "wb") as f:
             f.write(http_get(url, headers=headers))
         sh(f'uv tool install "{fn}" --force', check=True)
@@ -98,24 +86,24 @@ def run_cli(repo_path, max_checks, delay):
 def main():
     # Inputs
     dcx_url = env("DCX_URL")
-    owner = env("DCX_OWNER", "DQX-AI")
-    repo = env("DCX_REPO", "dcx-classification-agent")
+    # Owner/repo/pattern are no longer needed when using the DMC service endpoint,
+    # but keep inputs backward-compatible if DCX_URL is provided explicitly.
     tag = env("DCX_TAG", "latest")
-    pattern = env("DCX_ASSET_PATTERN", r"dcx(-|_)\d+\.\d+\.\d+.*\.(whl|tar\.gz)")
     repo_path = env("REPO_PATH", os.getcwd())
     scanner_dir = env("SCANNER_DIR", ".")
     max_checks = env("MAX_CHECKS", "30")
     delay = env("DELAY", "1.0")
     os.environ["AI_ENDPOINT"] = env("AI_ENDPOINT")
     os.environ["AI_API_KEY"] = env("AI_API_KEY")
-    token = env("GITHUB_TOKEN")
+    # Prefer dedicated service token if provided; fall back to GITHUB_TOKEN
+    token = env("DMC_SERVICE_TOKEN", env("GITHUB_TOKEN"))
 
     # Deps
     ensure_tool("uv", install_uv)
 
-    # Resolve asset URL
+    # Resolve asset URL (default to DMC service endpoint if not explicitly provided)
     if not dcx_url:
-        dcx_url = gh_release_asset_url(owner, repo, tag, pattern, token)
+        dcx_url = dcx_service_download_url(tag)
     print(f"[dcx-action] install from: {dcx_url}")
 
     # Install dcx-cli
