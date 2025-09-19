@@ -259,22 +259,13 @@ def run_makeflow(
 def run_cli(repo_path: Path, max_checks: int, delay: float) -> None:
     cmd = _dcx_cmd()
     # 1) Scan repository
-    sh(f'{cmd} scan "{repo_path}" --full-scan --ai-analysis --verbose', check=True)
+    sh(f'{cmd} full-pipeline "{repo_path}" --verbose --demo-mode', check=True)
 
     # Determine latest scan id from output directory
     scan_dir = _latest_scan_dir()
     if not scan_dir:
         raise RuntimeError("no scan directory under output/")
     scan_id = scan_dir.name
-
-    # 2) Check AI results for this specific scan
-    sh(f'{cmd} check-ai-results "{scan_id}"', check=True)
-
-    # 3) Combine analysis for this scan
-    sh(f'{cmd} combine-analysis "{scan_id}"', check=True)
-
-    # 4) Send results to API
-    sh(f'{cmd} send-to-api', check=True)
 
     log(f"complete: output/{scan_id}")
 
