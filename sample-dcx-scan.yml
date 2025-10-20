@@ -15,7 +15,7 @@ jobs:
       - name: Run DCX Action
         uses: DQX-AI/dcx-action@main
         with:
-          # Configure secret in the repo 
+          # Configure secret in the repo
           dcx_service_token: ${{ secrets.DCX_SERVICE_TOKEN }}
           dcx_tag: latest
           repo_path: ${{ github.workspace }}

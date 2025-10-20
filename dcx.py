@@ -168,9 +168,7 @@ def uv_tool_install_from_url(url: str, token: str) -> None:
             # Re-fetch the actual asset (usually a .whl or .tar.gz)
             with requests.get(asset_url, stream=True, timeout=300) as r2:
                 if r2.status_code != 200:
-                    raise RuntimeError(
-                        f"asset download failed ({r2.status_code})"
-                    )
+                    raise RuntimeError(f"asset download failed ({r2.status_code})")
                 cd = r2.headers.get("Content-Disposition", "")
                 filename = None
                 if "filename=" in cd:
@@ -259,7 +257,7 @@ def run_makeflow(
 def run_cli(repo_path: Path, max_checks: int, delay: float) -> None:
     cmd = _dcx_cmd()
     # 1) Scan repository
-    sh(f'{cmd} full-pipeline "{repo_path}" --verbose --demo-mode', check=True)
+    sh(f'{cmd} scan "{repo_path}"', check=True)
 
     # Determine latest scan id from output directory
     scan_dir = _latest_scan_dir()
@@ -297,10 +295,7 @@ def main() -> None:
     uv_tool_install_from_url(dcx_url, token)
 
     # run flow
-    if (scanner_dir / "Makefile").is_file():
-        run_makeflow(scanner_dir, repo_path, max_checks, delay)
-    else:
-        run_cli(repo_path, max_checks, delay)
+    run_cli(repo_path, max_checks, delay)
 
 
 if __name__ == "__main__":
