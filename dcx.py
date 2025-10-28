@@ -257,7 +257,7 @@ def run_makeflow(
 def run_cli(repo_path: Path, max_checks: int, delay: float) -> None:
     cmd = _dcx_cmd()
     # 1) Scan repository
-    sh(f'{cmd} scan "{repo_path}"', check=True)
+    sh(f'{cmd} scan start "{repo_path}"', check=True)
 
     # Determine latest scan id from output directory
     scan_dir = _latest_scan_dir()
