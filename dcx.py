@@ -254,10 +254,10 @@ def run_makeflow(
         os.chdir(cwd)
 
 
-def run_cli(repo_path: Path, max_checks: int, delay: float) -> None:
+def run_cli(repo_path: Path, max_checks: int, delay: float, AI_API_KEY: str) -> None:
     cmd = _dcx_cmd()
     # 1) Scan repository
-    sh(f'{cmd} scan start "{repo_path}"', check=True)
+    sh(f'GROQ_API_KEY={AI_API_KEY} {cmd} scan start "{repo_path}"', check=True)
 
     # Determine latest scan id from output directory
     scan_dir = _latest_scan_dir()
