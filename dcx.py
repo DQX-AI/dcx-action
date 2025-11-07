@@ -280,7 +280,7 @@ def main() -> None:
     max_checks = int(float(env("MAX_CHECKS", "30")))
     delay = float(env("DELAY", "1.0"))
     os.environ["AI_ENDPOINT"] = env("AI_ENDPOINT")
-    os.environ["AI_API_KEY"] = env("dcx_llm_key")
+    os.environ["AI_API_KEY"] = env("AI_API_KEY")
     token = env("DCX_SERVICE_TOKEN", env("GITHUB_TOKEN"))
 
     # deps
@@ -295,7 +295,7 @@ def main() -> None:
     uv_tool_install_from_url(dcx_url, token)
 
     # run flow
-    run_cli(repo_path, max_checks, delay)
+    run_cli(repo_path, max_checks, delay, os.environ["AI_API_KEY"])
 
 
 if __name__ == "__main__":
